@@ -1,26 +1,34 @@
 import random
 from alive_progress import alive_bar
 import numpy as np
+import matplotlib.pyplot as plt
+
+laenge = 30
+amino_auswahl = 20
 
 class Protein:
-    def __init__(self, laenge):
+    def __init__(self, laenge, amino_auswahl):
         self.laenge = laenge
         self.start = (0, 0)
+        self.amino_auswahl = amino_auswahl
+
         walk = False
         while not walk:
             walk = randomwalk(self.laenge, self.start)
-        self.amino_class = walk[0]
-        self.positions = walk[1]
-        surround_search(self.amino_class, self.positions)
+        self.amino_class_list = walk[0]
+        self.amino_positions = walk[1]
+
+        surround_search(self.amino_class_list, self.amino_positions)
+        self.interaction = Wechselmatrix(self.amino_auswahl)
 
     def __str__(self):
-        return str(self.positions)
+        return str(self.amino_positions)
 
 
-class Aminosaeure:
-    def __init__(self, pos):
+class Aminosaeure():
+    def __init__(self, pos, amino_auswahl):
         self.position = pos
-        self.amino = random.randint(1, 20)
+        self.amino = random.randint(1, amino_auswahl)
         self.neighbour = []
         self.connected = []
         self.possible_jumps = []
@@ -32,7 +40,7 @@ def randomwalk(laenge, start):
     amino_list = []
     with alive_bar(laenge, force_tty=True) as bar:
         for i in range(laenge):
-            amino_list.append(Aminosaeure(position))
+            amino_list.append(Aminosaeure(position, amino_auswahl))
             position_list.append(position)
             last_position = position
             dir_check = True
@@ -55,7 +63,7 @@ def randomwalk(laenge, start):
                 if trys > 4:
                     return False
             bar()
-    return (amino_list, position_list)
+    return amino_list, position_list
 
 
 """
@@ -88,5 +96,22 @@ def surround_search(amino_list, pos_array):
                 if np.linalg.norm(np.sum(free_direc, axis=0)) > 1:
                     amin.possible_jumps.append(destination_tuple)
 
+def Wechselmatrix(laenge):
+    matrix = np.zeros((laenge, laenge))
+    sigma = 1/np.sqrt(2)
+    mu = -3
+    for x in range(laenge):
+        for y in range(x+1):
+            matrix[x,y] = np.random.normal(loc=mu, scale=sigma)
+            matrix[y,x] = matrix[x,y]
 
-np.array(Protein(laenge=30).positions)
+    plt.imshow(matrix)
+    plt.show()
+    eigenwerte = np.linalg.eigvalsh(matrix)
+    sort_eigen = np.abs(np.append(eigenwerte[eigenwerte > 0], eigenwerte[eigenwerte < 0]))
+    plt.bar(list(range(laenge)), sort_eigen)
+    plt.show()
+    return matrix
+
+
+np.array(Protein(laenge=30, amino_auswahl=20).amino_positions)
