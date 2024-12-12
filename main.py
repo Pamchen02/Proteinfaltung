@@ -3,38 +3,41 @@ from alive_progress import alive_bar
 import numpy as np
 import matplotlib.pyplot as plt
 
+Diagramme = False
 laenge = 30
 amino_auswahl = 20
+
 
 class Protein:
     def __init__(self, laenge, amino_auswahl):
         self.laenge = laenge
-        self.start = (0, 0)
+        self.position = (0, 0)
         self.amino_auswahl = amino_auswahl
 
         walk = False
         while not walk:
-            walk = randomwalk(self.laenge, self.start)
+            walk = avoiding_randomwalk(self.laenge, self.position)
         self.amino_class_list = walk[0]
         self.amino_positions = walk[1]
 
         surround_search(self.amino_class_list, self.amino_positions)
         self.interaction = Wechselmatrix(self.amino_auswahl)
+        self.Energie = Energiecalc(self.amino_class_list, self.interaction)
 
     def __str__(self):
         return str(self.amino_positions)
 
 
-class Aminosaeure():
+class Aminosaeure:
     def __init__(self, pos, amino_auswahl):
         self.position = pos
-        self.amino = random.randint(1, amino_auswahl)
+        self.amino = random.randint(0, amino_auswahl - 1)
         self.neighbour = []
         self.connected = []
         self.possible_jumps = []
 
 
-def randomwalk(laenge, start):
+def avoiding_randomwalk(laenge, start):
     position = start
     position_list = []
     amino_list = []
@@ -71,16 +74,18 @@ Schaut welche Aminosäure zu welcher, per kovalenter Bindung, connected ist,
 sucht die nicht connectedten Nachbarn 
 und welche Spots frei sind für Positions swaps bei der die kovalenten Bindungen erhalten bleiben.
 """
+
+
 def surround_search(amino_list, pos_array):
     laenge = len(pos_array)
     for index, amin in enumerate(amino_list):
         direc_list = np.array(((0, 1), (0, -1), (1, 0), (-1, 0)))
         position = np.array(amin.position)
         if index > 0:
-            prev_connected = amino_list[index-1]
+            prev_connected = amino_list[index - 1]
             amin.connected.append(prev_connected)
         if index < laenge - 1:
-            next_connected = amino_list[index+1]
+            next_connected = amino_list[index + 1]
             amin.connected.append(next_connected)
         connected_step = [x.position - position for x in amin.connected]
         direc_set = set([tuple(x) for x in direc_list])
@@ -96,22 +101,40 @@ def surround_search(amino_list, pos_array):
                 if np.linalg.norm(np.sum(free_direc, axis=0)) > 1:
                     amin.possible_jumps.append(destination_tuple)
 
+
 def Wechselmatrix(laenge):
     matrix = np.zeros((laenge, laenge))
-    sigma = 1/np.sqrt(2)
+    sigma = 1 / np.sqrt(2)
     mu = -3
     for x in range(laenge):
-        for y in range(x+1):
-            matrix[x,y] = np.random.normal(loc=mu, scale=sigma)
-            matrix[y,x] = matrix[x,y]
+        for y in range(x + 1):
+            matrix[x, y] = np.random.normal(loc=mu, scale=sigma)
+            matrix[y, x] = matrix[x, y]
 
-    plt.imshow(matrix)
-    plt.show()
+    if Diagramme:
+        plt.imshow(matrix)
+        plt.show()
+
     eigenwerte = np.linalg.eigvalsh(matrix)
     sort_eigen = np.abs(np.append(eigenwerte[eigenwerte > 0], eigenwerte[eigenwerte < 0]))
-    plt.bar(list(range(laenge)), sort_eigen)
-    plt.show()
+
+    if Diagramme:
+        plt.bar(list(range(laenge)), sort_eigen)
+        plt.show()
+
     return matrix
+
+
+def Energiecalc(amino_class_list, Matrix):
+    energie = 0
+    for amino in amino_class_list:
+        x = amino.amino
+        if amino.neighbour:
+            for neighbour in amino.neighbour:
+                y = neighbour.amino
+                energie += Matrix[x, y]
+    print(energie)
+    return energie
 
 
 np.array(Protein(laenge=30, amino_auswahl=20).amino_positions)
