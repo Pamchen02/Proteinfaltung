@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 boltzmann = 1.380*10**(-23)
 
 
-Diagramme = False
+Diagramme = True
 laenge = 30
 amino_auswahl = 20
 
@@ -27,25 +27,52 @@ class Protein:
         self.interaction_matrix = Wechselmatrix(self.amino_auswahl)
         self.energie = Energiecalc(self.amino_class_list, self.interaction_matrix)
 
+    def Energie_update(self):
+        self.energie = Energiecalc(self.amino_class_list, self.interaction_matrix)
+
     def __str__(self):
         return str(self.amino_positions)
+
+    def clone_Amino(self, amino_class):
+        """Erstellt nen Clone an der Position wo der Possible_Jump ist, interagiert noch nicht mit dem Protein"""
+        clone = Aminosaeure(amino_class.possible_jumps[0], self.amino_auswahl)
+        clone.connected = amino_class.connected
+        clone.amino_type = amino_class.amino_type
+        self.Neighbour_amino_update(clone)
+        clone.possible_jumps = [amino_class.position]
+        self.Energie_amino_update(clone)
+        return clone
 
     def Position_swap(self, temp):
         potentialle_swaps = [(amino_class, index) for index, amino_class in enumerate(self.amino_class_list) if amino_class.possible_jumps]
         random_amino, random_amino_index = potentialle_swaps[random.randint(0, len(potentialle_swaps)-1)]
-        old_pos = random_amino.position
-        random_amino.position = random_amino.possible_jumps[0]
-        for dx in [-1, 0, 1]:
-            for dy in [-1, 0, 1]:
-                if dx == 0 and dy == 0:
-                    continue
-                check_pos = (old_pos[0]+dx, old_pos[1]+dy)
-                if check_pos in self.amino_positions:
-                    print("moin")
+        random_clone = self.clone_Amino(random_amino)
+        energie_diff = random_clone.energie - random_amino.energie
+        swap = swap_check(temp, energie_diff)  # Gibt True oder False zurück
+        if swap:
+            self.energie += energie_diff
+            self.amino_class_list[random_amino_index] = random_clone
+            self.amino_positions[random_amino_index] = random_clone.position
+            position_check_list = []    # hier sind Indices drin
+            old_pos, new_pos = random_amino.position, random_clone.position
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+                    old_check = (old_pos[0] + dx, old_pos[1] + dy)
+                    new_check = (new_pos[0] + dx, new_pos[1] + dy)
+                    if old_check in self.amino_positions:
+                        if self.amino_positions.index(old_check) not in position_check_list:
+                            position_check_list.append(self.amino_positions.index(old_check))
+                    if new_check in self.amino_positions:
+                        if self.amino_positions.index(new_check) not in position_check_list:
+                            position_check_list.append(self.amino_positions.index(new_check))
+            for index in position_check_list:
+                amino_to_check = self.amino_class_list[index]
+                self.full_correction_amino(amino_to_check)
 
-        # warum ist das nicht vernümpftig gemacht
-
-    def Neighour_check(self, current_amino):
+    def Neighbour_amino_update(self, current_amino):
+        # Ändert die Protein_eigenschaften nicht
         direc_list = np.array(((0, 1), (0, -1), (1, 0), (-1, 0)))
         position = np.array(current_amino.position)
         connected_step = [x.position - position for x in current_amino.connected]
@@ -62,20 +89,23 @@ class Protein:
                 if np.linalg.norm(np.sum(free_direc, axis=0)) > 1:
                     current_amino.possible_jumps.append(destination_tuple)
 
-    def Energie_check(self, current_amino):
-        self.energie -= current_amino.energie
+    def Energie_amino_update(self, current_amino):
+        # Ändert die Protein_eigenschaften nicht
         current_amino.energie = 0
         x = current_amino.amino_type
         if current_amino.neighbour:
             for neighbour in current_amino.neighbour:
                 y = neighbour.amino_type
                 current_amino.energie += self.interaction_matrix[x, y]
-                self.energie += self.interaction_matrix[x, y]
 
-    def full_check_amino(self, index):
-        current_amino = self.amino_class_list[index]
-        Protein.Neighour_check(self, current_amino)
-        Protein.Energie_check(self, current_amino)
+    def full_correction_amino(self, amino_class):
+        # Ändert die Protein_eigenschafte Energie auf den korrigierten Wert
+        self.Neighbour_amino_update(amino_class)
+
+        self.energie -= amino_class.energie
+        self.Energie_amino_update(amino_class)
+        self.energie += amino_class.energie
+
 
 class Aminosaeure:
     def __init__(self, pos, amino_auswahl):
@@ -117,14 +147,10 @@ def avoiding_randomwalk(laenge, start):
     return amino_list, position_list
 
 
-"""
-Schaut welche Aminosäure zu welcher, per kovalenter Bindung, connected ist,
-sucht die nicht connectedten Nachbarn 
-und welche Spots frei sind für Positions swaps bei der die kovalenten Bindungen erhalten bleiben.
-"""
-
-
 def first_surround_search(amino_list, pos_array):
+    """ Schaut welche Aminosäure zu welcher, per kovalenter Bindung, connected ist,
+    sucht die nicht connectedten Nachbarn
+    und welche Spots frei sind für Positions swaps bei der die kovalenten Bindungen erhalten bleiben."""
     laenge = len(pos_array)
     for index, amin in enumerate(amino_list):
         direc_list = np.array(((0, 1), (0, -1), (1, 0), (-1, 0)))
@@ -186,5 +212,17 @@ def Energiecalc(amino_class_list, Matrix):
     return energie
 
 
+def swap_check(temp, energie_diff):
+    if energie_diff > 0:
+        return True
+    else:
+        chance = random.random()
+        barrier = np.exp(-energie_diff/(temp*boltzmann))
+        if chance < barrier:
+            return True
+        else:
+            return False
 
-np.array(Protein(laenge=30, amino_auswahl=20).amino_positions)
+Protein1 = Protein(laenge=30, amino_auswahl=20)
+Protein1.Position_swap(1)
+
