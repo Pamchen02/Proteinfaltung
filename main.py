@@ -217,12 +217,14 @@ def swap_check(temp, energie_diff):
         return True
     else:
         chance = random.random()
-        barrier = np.exp(-energie_diff/(temp*boltzmann))
+        barrier = np.exp(energie_diff/(temp*boltzmann))
+        print(barrier)
         if chance < barrier:
             return True
         else:
             return False
 
 Protein1 = Protein(laenge=30, amino_auswahl=20)
-Protein1.Position_swap(1)
+for i in range(10):
+    Protein1.Position_swap(10)
 
