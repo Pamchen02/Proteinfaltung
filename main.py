@@ -293,6 +293,7 @@ def multiple_iterations(steps, iterations):
     for i in range(iterations):
         msd_values = RandoMandoDangoLaengo(steps)
         all_msd_values.append(msd_values)
+        print(f"Iteration", i, "von", iterations )
 
     avg_msd = [sum(step_values) / len(step_values) for step_values in zip(*all_msd_values)]
 
