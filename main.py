@@ -290,9 +290,9 @@ def nen_fit(tau, a, alpha):
 def multiple_iterations(steps, iterations):
     all_msd_values = []
 
-
-    msd_values = RandoMandoDangoLaengo(steps)
-    all_msd_values.append(msd_values)
+    for i in range(iterations):
+        msd_values = RandoMandoDangoLaengo(steps)
+        all_msd_values.append(msd_values)
 
     avg_msd = [sum(step_values) / len(step_values) for step_values in zip(*all_msd_values)]
 
@@ -321,7 +321,7 @@ def multiple_iterations(steps, iterations):
     return avg_msd, all_msd_values, popt
 
 
-selfavoiding_random_walk = True
+selfavoiding_random_walk = False
 
 steps = 250
 iterations = 20
