@@ -74,11 +74,21 @@ class Protein:
         amin.neighbour = neighbours
 
     def Position_swap(self, temp):
-        random_index = np.random.randint(1, high=self.laenge)
+        random_index = np.random.randint(0, high=self.laenge)
         random_amino = self.amino_class_list[random_index]
         vector = [0, 0]
+
         for connection in random_amino.connected:
             vector += connection.position-random_amino.position
+            if len(random_amino.connected) == 1:
+                for index, cord in enumerate(vector):
+                    if cord == 0:
+                        chance = np.random.random()
+                        if chance < 0.5:
+                            cord = 1
+                        else:
+                            cord = -1
+                        vector[index] = cord
         if tuple(random_amino.position+vector) != tuple(random_amino.position):
             if tuple(random_amino.position+vector) not in self.amino_positions_tuple:
                 jump_pos = random_amino.position+vector
@@ -91,9 +101,6 @@ class Protein:
                     self.amino_positions_tuple[random_index] = tuple(jump_pos)
                     self.Protein_update()
 
-
-        # Die beiden Randdinger nich vergessen
-
     def clone_Amino(self, amino_class, jump_location):
         # Erstellt nen Clone an der Position wo der Possible_Jump ist, interagiert noch nicht mit dem Protein
         clone = Aminosaeure(jump_location, self.amino_auswahl, amino_class.index)
@@ -102,9 +109,6 @@ class Protein:
         self.single_search(clone)
         self.Energie_amino_update(clone)
         return clone
-
-
-
 
 class Aminosaeure:
     def __init__(self, pos, amino_auswahl, index):
@@ -279,8 +283,8 @@ def swap_check(temp, energie_diff):
         return True
     else:
         chance = np.random.random()
-        barrier = np.exp(-energie_diff/(temp*boltzmann))
-        if chance < barrier:
+        barrier = np.exp(energie_diff/(temp*boltzmann))
+        if chance > barrier:
             return False
         else:
             return True
@@ -294,9 +298,10 @@ plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for poin
 plt.grid()
 print(Protein1.energie)
 plt.show()
-
-for i in range(100000):
-    Protein1.Position_swap(1)
+with alive_bar(10000) as bar:
+    for i in range(10000):
+        Protein1.Position_swap(1)
+        bar()
 plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
 plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
 plt.grid()
