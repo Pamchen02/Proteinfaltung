@@ -25,11 +25,12 @@ class Protein:
         self.amino_positions = walk[1]
         self.amino_positions_tuple = [tuple(position) for position in self.amino_positions]
 
-        self.surround_search()
         self.interaction_matrix = Wechselmatrix(self.amino_auswahl)
+        self.surround_search()
         self.energie = Energiecalc(self.amino_class_list, self.interaction_matrix)
 
-    def Energie_update(self):
+    def Protein_update(self):
+        self.surround_search()
         self.energie = Energiecalc(self.amino_class_list, self.interaction_matrix)
 
     def __str__(self):
@@ -46,29 +47,31 @@ class Protein:
 
     def surround_search(self):
         # defines connections and neighbours for each amino-acid in the Protein
-        direc_list = np.array((np.asarray((0, 1)), np.asarray((0, -1)), np.asarray((-1, 0)), np.asarray((1, 0))))
         for index, amin in enumerate(self.amino_class_list):
-            connected_step = []
-            if index > 0:
-                prev_connected = self.amino_class_list[index - 1]
-                amin.connected.append(prev_connected)
-                connected_step.append(prev_connected.position-amin.position)
-            if index < laenge - 1:
-                next_connected = self.amino_class_list[index + 1]
-                amin.connected.append(next_connected)
-                connected_step.append(next_connected.position - amin.position)
-            aset = set([tuple(x) for x in connected_step])
-            bset = set([tuple(x) for x in direc_list])
-            free_direc = np.array([x for x in bset - aset])
-            for direc in free_direc:
-                if tuple(amin.position+direc) in self.amino_positions_tuple:
-                    neighbour_index = self.amino_positions_tuple.index(tuple(amin.position+direc))
-                    amin.neighbour.append(self.amino_class_list[neighbour_index])
-        """x = [x[0] for x in self.amino_positions]
-        y = [x[1] for x in self.amino_positions]
-        plt.scatter(x,y)
-        plt.plot(x,y)
-        plt.show()"""
+            self.single_search(amin)
+
+    def single_search(self, amin):
+        direc_list = np.array((np.asarray((0, 1)), np.asarray((0, -1)), np.asarray((-1, 0)), np.asarray((1, 0))))
+        connected_step = []
+        connected_classes = []
+        if amin.index > 0:
+            prev_connected = self.amino_class_list[amin.index - 1]
+            connected_classes.append(prev_connected)
+            connected_step.append(prev_connected.position - amin.position)
+        if amin.index < laenge - 1:
+            next_connected = self.amino_class_list[amin.index + 1]
+            connected_classes.append(next_connected)
+            connected_step.append(next_connected.position - amin.position)
+        amin.connected = connected_classes
+        aset = set([tuple(x) for x in connected_step])
+        bset = set([tuple(x) for x in direc_list])
+        free_direc = np.array([x for x in bset - aset])
+        for direc in free_direc:
+            neighbours = []
+            if tuple(amin.position + direc) in self.amino_positions_tuple:
+                neighbour_index = self.amino_positions_tuple.index(tuple(amin.position + direc))
+                neighbours.append(self.amino_class_list[neighbour_index])
+        amin.neighbour = neighbours
 
     def Position_swap(self, temp):
         random_index = np.random.randint(1, high=self.laenge)
@@ -77,9 +80,28 @@ class Protein:
         for connection in random_amino.connected:
             vector += connection.position-random_amino.position
         if tuple(random_amino.position+vector) != tuple(random_amino.position):
-            print("ecke")
             if tuple(random_amino.position+vector) not in self.amino_positions_tuple:
-                print("kann springen")
+                jump_pos = random_amino.position+vector
+                clone = self.clone_Amino(random_amino, jump_pos)
+                energie_diff = random_amino.energie - clone.energie
+                swap = swap_check(temp, energie_diff)
+                if swap:
+                    self.amino_class_list[random_index] = clone
+                    self.amino_positions[random_index] = jump_pos
+                    self.amino_positions_tuple[random_index] = tuple(jump_pos)
+                    self.Protein_update()
+
+
+        # Die beiden Randdinger nich vergessen
+
+    def clone_Amino(self, amino_class, jump_location):
+        # Erstellt nen Clone an der Position wo der Possible_Jump ist, interagiert noch nicht mit dem Protein
+        clone = Aminosaeure(jump_location, self.amino_auswahl, amino_class.index)
+        clone.connected = amino_class.connected
+        clone.amino_type = amino_class.amino_type
+        self.single_search(clone)
+        self.Energie_amino_update(clone)
+        return clone
 
 
 
@@ -252,14 +274,36 @@ def Energiecalc(amino_class_list, Matrix):
                 energie += Matrix[x, y]
     return energie
 
+def swap_check(temp, energie_diff):
+    if energie_diff > 0:
+        return True
+    else:
+        chance = np.random.random()
+        barrier = np.exp(-energie_diff/(temp*boltzmann))
+        if chance < barrier:
+            return False
+        else:
+            return True
 
 # Aufgabe_3()
 
 
 Protein1 = Protein(laenge=30, amino_auswahl=20)
-Protein1.Position_swap(1)
-for amin in Protein1.amino_class_list:
-    continue
+plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
+plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
+plt.grid()
+print(Protein1.energie)
+plt.show()
+
+for i in range(100000):
+    Protein1.Position_swap(1)
+plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
+plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
+plt.grid()
+print(Protein1.energie)
+plt.show()
+
+
 
 """Protein1 = Protein(laenge=30, amino_auswahl=20)
 with alive_bar(Faltungs_schritte) as bar:
@@ -268,7 +312,6 @@ with alive_bar(Faltungs_schritte) as bar:
         for amino in Protein1.amino_class_list:
             for connect in amino.connected:
                 if amino.index - connect.index != 1 and amino.index - connect.index != -1:
-                    print("ALARM!", amino.index, connect.index)
         bar()
 
     plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
