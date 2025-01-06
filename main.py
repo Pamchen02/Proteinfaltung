@@ -465,7 +465,7 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
 
 
 def main():
-    # print("YI STILL THE MAIN")
+    print("YI STILL THE MAIN")
     # Aufgabe_3()
     # Aufgabe_4()
     # Aufgabe_5()
