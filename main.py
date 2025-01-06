@@ -9,7 +9,10 @@ boltzmann = 1 # 1.380 * 10 ** (-23)
 Diagramme = False
 laenge = 30
 amino_auswahl = 20
-Faltungs_schritte = 1000
+Faltungs_schritte = 100000
+Start_Temperatur = 1
+Temperatur_Schritte = 10
+# Im besten Fall ist Faltungs_schritte durch Temperatur_Schritte teilbar, sonst doff
 
 
 class Protein:
@@ -188,10 +191,16 @@ def swap_check(temp, energie_diff):
     else:
         chance = np.random.random()
         barrier = np.exp(energie_diff/(temp*boltzmann))
-        if chance > barrier:
-            return False
-        else:
+        if chance < barrier:
             return True
+        else:
+            return False
+
+def Abstand_A_O(Protein):
+    A_pos, O_pos = Protein.amino_positions[0], Protein.amino_positions[-1]
+    Abstand = np.sqrt((A_pos[0]-O_pos[0])**2 + (A_pos[1]-O_pos[1])**2)
+    return Abstand
+
 
 def Aufgabe_3():
     def RandoMandoDangoLaengo(steps):
@@ -290,27 +299,97 @@ def Aufgabe_3():
     iterations = 100000
     average_msd, all_msd, fit_params = multiple_iterations(steps, iterations)
 
-def Aufgabe_4(laenge, amino_auswahl, temp):
-    Protein1 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
-    plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
-    plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
-    plt.grid()
-    print(Protein1.energie)
-    plt.show()
-    with alive_bar(10000) as bar:
-        for i in range(10000):
-            Protein1.Position_swap(temp)
+def Aufgabe_4(laenge, amino_auswahl, temp, schritte):
+
+    Protein_4 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
+
+    plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=2, rowspan=1)
+    plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
+    plot3 = plt.subplot2grid((2, 2), (1, 1), colspan=1, rowspan=1)
+    # Vorher Graph
+    plot2.plot([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions])
+    plot2.scatter([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions], s=100)
+    plot2.set_xlabel(str("Abstand", Abstand_A_O(Protein_4)))
+    plot2.grid()
+
+    # Der wichtige Teil
+    Energie_array = np.zeros(schritte)
+    with alive_bar(schritte) as bar:
+        for i in range(schritte):
+            Protein_4.Position_swap(temp)
+            Energie_array[i] = Protein_4.energie
             bar()
-    plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
-    plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
-    plt.grid()
-    print(Protein1.energie)
+
+    # Nachher Graph
+    plot3.plot([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions])
+    plot3.scatter([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions], s=100)
+    plot3.set_xlabel("Abstand", str(Abstand_A_O(Protein_4)))
+    plot3.grid()
+
+    # Energie Graph
+    # plot1.plot(list(range(schritte)), Energie_array)
+    plot1.scatter(list(range(schritte)), Energie_array)
+    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.grid()
     plt.show()
 
+def Aufgabe_5(laenge, amino_auswahl, temp, schritte, Temp_schritte):
+    # Durch np.linspace immer gleich Temperatur schritte, immer gleich viele Faltungen pro Temperatur
+    temp_list = np.linspace(temp, Start_Temperatur/Temp_schritte, Temp_schritte)
+
+    plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=1, rowspan=1)
+    plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
+    plot3 = plt.subplot2grid((2, 2), (0, 1), colspan=1, rowspan=1)
+    plot4 = plt.subplot2grid((2, 2), (1, 1), colspan=1, rowspan=1)
+
+
+
+    Protein_5 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
+    Energie_array, Abstands_array = np.zeros(schritte), np.zeros(schritte)
+
+    plot3.plot([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions])
+    plot3.scatter([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions],
+                  s=100)
+    plot3.set_xlabel("Start")
+    plot3.grid()
+
+    with alive_bar(schritte) as bar:
+        for index, temp in enumerate(temp_list):
+            print(temp)
+            for i in range(Faltungs_schritte//Temp_schritte):
+                Protein_5.Position_swap(temp)
+                Energie_array[i+index*Faltungs_schritte//Temp_schritte] = Protein_5.energie
+                Abstands_array[i+index*Faltungs_schritte//Temp_schritte] = Abstand_A_O(Protein_5)
+                bar()
+
+    plot1.scatter(list(range(schritte)), Energie_array)
+    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.vlines(list(range(0,schritte, schritte//Temp_schritte)), np.min(Energie_array), np.max(Energie_array), colors="k", zorder=0)
+    plot1.set_ylabel("Energie")
+    plot1.grid()
+
+    plot2.scatter(list(range(schritte)), Abstands_array)
+    plot2.scatter([0, schritte], [Abstands_array[0], Abstands_array[-1]], c="red")
+    plot2.plot([0, schritte], [Abstands_array[0], Abstands_array[-1]], c="red")
+    plot2.vlines(list(range(0, schritte, schritte // Temp_schritte)), np.min(Abstands_array), np.max(Abstands_array), colors="k", zorder=0)
+    plot2.set_ylabel("Abstand")
+    plot2.grid()
+
+    plot4.plot([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions])
+    plot4.scatter([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions],
+                  s=100)
+    plot4.set_xlabel("Ende")
+    plot4.grid()
+
+    plt.show()
 
 def main():
     print("YI STILL THE MAIN")
     # Aufgabe_3()
-    # Aufgabe_4(laenge, amino_auswahl, temp=1)
+    # Aufgabe_4(laenge, amino_auswahl, temp=Start_Temperatur, schritte=Faltungs_schritte)
+    Aufgabe_5(laenge, amino_auswahl, temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte)
+    print(np.linspace(Start_Temperatur, Start_Temperatur/Temperatur_Schritte, Temperatur_Schritte))
 
 main()
