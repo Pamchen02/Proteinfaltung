@@ -148,6 +148,51 @@ def avoiding_randomwalk(laenge, start):
                 return False
     return amino_list, position_array
 
+def Wechselmatrix(laenge):
+    matrix = np.zeros((laenge, laenge))
+    sigma = 1 / np.sqrt(2)
+    mu = -3
+    for x in range(laenge):
+        for y in range(x + 1):
+            matrix[x, y] = np.random.normal(loc=mu, scale=sigma)
+            matrix[y, x] = matrix[x, y]
+
+    if Diagramme:
+        plt.imshow(matrix)
+        plt.show()
+
+    eigenwerte = np.linalg.eigvalsh(matrix)
+    sort_eigen = np.abs(np.append(eigenwerte[eigenwerte > 0], eigenwerte[eigenwerte < 0]))
+
+    if Diagramme:
+        plt.bar(list(range(laenge)), sort_eigen)
+        plt.show()
+
+    return matrix
+
+def Energiecalc(amino_class_list, Matrix):
+    energie = 0
+    for amino in amino_class_list:
+        amino.energie = 0
+        x = amino.amino_type
+        if amino.neighbour:
+            for neighbour in amino.neighbour:
+                y = neighbour.amino_type
+                amino.energie += Matrix[x, y]
+                energie += Matrix[x, y]
+    return energie
+
+def swap_check(temp, energie_diff):
+    if energie_diff > 0:
+        return True
+    else:
+        chance = np.random.random()
+        barrier = np.exp(energie_diff/(temp*boltzmann))
+        if chance > barrier:
+            return False
+        else:
+            return True
+
 def Aufgabe_3():
     def RandoMandoDangoLaengo(steps):
         def RandoMando(steps, start=(0, 0)):
@@ -217,6 +262,7 @@ def Aufgabe_3():
         tau = np.arange(1, len(avg_msd) + 1)
         msd = np.array(avg_msd)
 
+        # noinspection PyTupleAssignmentBalance
         popt, pcov = curve_fit(nen_fit, tau, msd, p0=(1, 0.5))
 
         msd_fit = nen_fit(tau, *popt)
@@ -244,82 +290,27 @@ def Aufgabe_3():
     iterations = 100000
     average_msd, all_msd, fit_params = multiple_iterations(steps, iterations)
 
-def Wechselmatrix(laenge):
-    matrix = np.zeros((laenge, laenge))
-    sigma = 1 / np.sqrt(2)
-    mu = -3
-    for x in range(laenge):
-        for y in range(x + 1):
-            matrix[x, y] = np.random.normal(loc=mu, scale=sigma)
-            matrix[y, x] = matrix[x, y]
-
-    if Diagramme:
-        plt.imshow(matrix)
-        plt.show()
-
-    eigenwerte = np.linalg.eigvalsh(matrix)
-    sort_eigen = np.abs(np.append(eigenwerte[eigenwerte > 0], eigenwerte[eigenwerte < 0]))
-
-    if Diagramme:
-        plt.bar(list(range(laenge)), sort_eigen)
-        plt.show()
-
-    return matrix
-
-def Energiecalc(amino_class_list, Matrix):
-    energie = 0
-    for amino in amino_class_list:
-        amino.energie = 0
-        x = amino.amino_type
-        if amino.neighbour:
-            for neighbour in amino.neighbour:
-                y = neighbour.amino_type
-                amino.energie += Matrix[x, y]
-                energie += Matrix[x, y]
-    return energie
-
-def swap_check(temp, energie_diff):
-    if energie_diff > 0:
-        return True
-    else:
-        chance = np.random.random()
-        barrier = np.exp(energie_diff/(temp*boltzmann))
-        if chance > barrier:
-            return False
-        else:
-            return True
-
-# Aufgabe_3()
-
-
-Protein1 = Protein(laenge=30, amino_auswahl=20)
-plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
-plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
-plt.grid()
-print(Protein1.energie)
-plt.show()
-with alive_bar(10000) as bar:
-    for i in range(10000):
-        Protein1.Position_swap(1)
-        bar()
-plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
-plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
-plt.grid()
-print(Protein1.energie)
-plt.show()
-
-
-
-"""Protein1 = Protein(laenge=30, amino_auswahl=20)
-with alive_bar(Faltungs_schritte) as bar:
-    for i in range(Faltungs_schritte):
-        Protein1.Position_swap(temp=10)
-        for amino in Protein1.amino_class_list:
-            for connect in amino.connected:
-                if amino.index - connect.index != 1 and amino.index - connect.index != -1:
-        bar()
-
+def Aufgabe_4(laenge, amino_auswahl, temp):
+    Protein1 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
     plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
     plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
     plt.grid()
-    plt.show()"""
+    print(Protein1.energie)
+    plt.show()
+    with alive_bar(10000) as bar:
+        for i in range(10000):
+            Protein1.Position_swap(temp)
+            bar()
+    plt.plot([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions])
+    plt.scatter([point[0] for point in Protein1.amino_positions], [point[1] for point in Protein1.amino_positions], s=100)
+    plt.grid()
+    print(Protein1.energie)
+    plt.show()
+
+
+def main():
+    print("YI STILL THE MAIN")
+    # Aufgabe_3()
+    # Aufgabe_4(laenge, amino_auswahl, temp=1)
+
+main()
