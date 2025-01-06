@@ -4,19 +4,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+"""
+Es fehlen noch kleinigkeiten im Code: bei Aufagbe 5 mitteln. 
+Auswertung bis zur Vorstellung fehlt noch: Eigenwert Verteilung bei 2, Werte bei 3 und 4, was anschaulichen zu 5 und 6
+
+Da bei hohen Temperaturen mehr passiert, braucht er da länger
+Alles braucht bei Start_temp 10 und 10 schritten ca. 14 sec bei 10**5 Faltungsschritten
+Alles braucht bei Start_temp 1 und 10 schritten ca. 2 sec bei 10**5 Faltungsschritten
+"""
+
 boltzmann = 1 # 1.380 * 10 ** (-23)
 
 Diagramme = False
 laenge = 30
 amino_auswahl = 20
-Faltungs_schritte = 100000
+Faltungs_schritte = 1 * 10**5
 Start_Temperatur = 1
-Temperatur_Schritte = 10
+Temperatur_Schritte = 1 # Bei 1 bleibt die Starttemperatur
+Wechselwirkungs_energie_fest = -3
+Random_wechselwirkungsrichtung = False
 # Im besten Fall ist Faltungs_schritte durch Temperatur_Schritte teilbar, sonst doff
 
 
 class Protein:
-    def __init__(self, laenge, amino_auswahl):
+    def __init__(self, laenge, amino_auswahl, fixed_energie=False, random_direction=False):
         self.laenge = laenge
         self.position = np.zeros(2)
         self.amino_auswahl = amino_auswahl
@@ -28,16 +39,13 @@ class Protein:
         self.amino_positions = walk[1]
         self.amino_positions_tuple = [tuple(position) for position in self.amino_positions]
 
-        self.interaction_matrix = Wechselmatrix(self.amino_auswahl)
+        self.interaction_matrix = Wechselmatrix(self.amino_auswahl, fixed_energie, random_direction)
         self.surround_search()
         self.energie = Energiecalc(self.amino_class_list, self.interaction_matrix)
 
     def Protein_update(self):
         self.surround_search()
         self.energie = Energiecalc(self.amino_class_list, self.interaction_matrix)
-
-    def __str__(self):
-        return str(self.amino_positions)
 
     def Energie_amino_update(self, current_amino):
         # Ändert die Protein_eigenschaften nicht
@@ -151,13 +159,19 @@ def avoiding_randomwalk(laenge, start):
                 return False
     return amino_list, position_array
 
-def Wechselmatrix(laenge):
+def Wechselmatrix(laenge, fixed_energie, random_direction):
     matrix = np.zeros((laenge, laenge))
     sigma = 1 / np.sqrt(2)
     mu = -3
     for x in range(laenge):
         for y in range(x + 1):
             matrix[x, y] = np.random.normal(loc=mu, scale=sigma)
+            if fixed_energie:
+                matrix[x, y] = fixed_energie
+                if random_direction:
+                    if np.random.rand() > .5:
+                        matrix[x, y] = -matrix[x, y]
+
             matrix[y, x] = matrix[x, y]
 
     if Diagramme:
@@ -173,7 +187,7 @@ def Wechselmatrix(laenge):
 
     return matrix
 
-def Energiecalc(amino_class_list, Matrix):
+def Energiecalc(amino_class_list, matrix):
     energie = 0
     for amino in amino_class_list:
         amino.energie = 0
@@ -181,8 +195,8 @@ def Energiecalc(amino_class_list, Matrix):
         if amino.neighbour:
             for neighbour in amino.neighbour:
                 y = neighbour.amino_type
-                amino.energie += Matrix[x, y]
-                energie += Matrix[x, y]
+                amino.energie += matrix[x, y]
+                energie += matrix[x, y]
     return energie
 
 def swap_check(temp, energie_diff):
@@ -200,6 +214,16 @@ def Abstand_A_O(Protein):
     A_pos, O_pos = Protein.amino_positions[0], Protein.amino_positions[-1]
     Abstand = np.sqrt((A_pos[0]-O_pos[0])**2 + (A_pos[1]-O_pos[1])**2)
     return Abstand
+
+def Number_Neighbours(Protein):
+    neighbours = 0
+    for amino in Protein.amino_class_list:
+        neighbours += len(amino.neighbour)
+    return neighbours
+
+def spezifische_Waerme(fixed_energie, neighbour_array, temp):
+    Kapazitaet = fixed_energie**2 * (np.mean(neighbour_array**2) - np.mean(neighbour_array)**2) / (laenge * temp**2)
+    return Kapazitaet
 
 
 def Aufgabe_3():
@@ -299,7 +323,7 @@ def Aufgabe_3():
     iterations = 100000
     average_msd, all_msd, fit_params = multiple_iterations(steps, iterations)
 
-def Aufgabe_4(laenge, amino_auswahl, temp, schritte):
+def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
 
     Protein_4 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
 
@@ -334,19 +358,17 @@ def Aufgabe_4(laenge, amino_auswahl, temp, schritte):
     plot1.grid()
     plt.show()
 
-def Aufgabe_5(laenge, amino_auswahl, temp, schritte, Temp_schritte):
+def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte):
     # Durch np.linspace immer gleich Temperatur schritte, immer gleich viele Faltungen pro Temperatur
     temp_list = np.linspace(temp, Start_Temperatur/Temp_schritte, Temp_schritte)
+
+    Protein_5 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
+    Energie_array, Abstands_array = np.zeros(schritte), np.zeros(schritte)
 
     plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=1, rowspan=1)
     plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
     plot3 = plt.subplot2grid((2, 2), (0, 1), colspan=1, rowspan=1)
     plot4 = plt.subplot2grid((2, 2), (1, 1), colspan=1, rowspan=1)
-
-
-
-    Protein_5 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
-    Energie_array, Abstands_array = np.zeros(schritte), np.zeros(schritte)
 
     plot3.plot([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions])
     plot3.scatter([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions],
@@ -356,7 +378,6 @@ def Aufgabe_5(laenge, amino_auswahl, temp, schritte, Temp_schritte):
 
     with alive_bar(schritte) as bar:
         for index, temp in enumerate(temp_list):
-            print(temp)
             for i in range(Faltungs_schritte//Temp_schritte):
                 Protein_5.Position_swap(temp)
                 Energie_array[i+index*Faltungs_schritte//Temp_schritte] = Protein_5.energie
@@ -385,11 +406,54 @@ def Aufgabe_5(laenge, amino_auswahl, temp, schritte, Temp_schritte):
 
     plt.show()
 
+def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte):
+    Protein_6 = Protein(laenge=laenge, amino_auswahl=amino_auswahl, fixed_energie=fixed_energie, random_direction=random_direction)
+    temp_list = np.linspace(temp, Start_Temperatur / Temp_schritte, Temp_schritte)
+    print(temp_list)
+    Energie_array, Abstands_array = np.zeros(schritte), np.zeros(schritte)
+    Neighbour_mega_array, Waerme_array = np.zeros(len(temp_list)), np.zeros(len(temp_list))
+
+
+    with alive_bar(schritte) as bar:
+        for index, temp in enumerate(temp_list):
+            neighbour_array = np.zeros(schritte//Temp_schritte)
+            for i in range(schritte//Temp_schritte):
+                Protein_6.Position_swap(temp)
+                Energie_array[i+index*schritte//Temp_schritte] = Protein_6.energie
+                Abstands_array[i+index*schritte//Temp_schritte] = Abstand_A_O(Protein_6)
+                neighbour_array[i] = Number_Neighbours(Protein_6)
+                bar()
+            # Neighbour_mega_array[index] = neighbour_array
+            Waerme_array[index] = spezifische_Waerme(fixed_energie, neighbour_array, temp)
+
+    plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=2, rowspan=1)
+    plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=2, rowspan=1)
+
+    plot1.scatter(temp_list, Waerme_array)
+    plot1.grid()
+    plot1.set_xlabel("Temperatur")
+    plot1.set_ylabel("Wärmekapazität")
+
+    plot2.scatter(list(range(schritte)), Energie_array)
+    plot2.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot2.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot2.vlines(list(range(0, schritte, schritte // Temp_schritte)), np.min(Energie_array), np.max(Energie_array),
+                 colors="k", zorder=0)
+    plot2.set_ylabel("Energie")
+    plot2.grid()
+
+
+    plt.show()
+
+    # Hier fehlen noch nen paar Graphen
+
+
+
 def main():
     print("YI STILL THE MAIN")
     # Aufgabe_3()
-    # Aufgabe_4(laenge, amino_auswahl, temp=Start_Temperatur, schritte=Faltungs_schritte)
-    Aufgabe_5(laenge, amino_auswahl, temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte)
-    print(np.linspace(Start_Temperatur, Start_Temperatur/Temperatur_Schritte, Temperatur_Schritte))
+    # Aufgabe_4()
+    # Aufgabe_5()
+    Aufgabe_6(fixed_energie=Wechselwirkungs_energie_fest, random_direction=Random_wechselwirkungsrichtung)
 
 main()
