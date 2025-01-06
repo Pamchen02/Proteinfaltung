@@ -15,12 +15,12 @@ Alles braucht bei Start_temp 1 und 10 schritten ca. 2 sec bei 10**5 Faltungsschr
 
 boltzmann = 1 # 1.380 * 10 ** (-23)
 
-Diagramme = False   # Ob die Wechselwirkungsmatrix angezeigt werden soll
+Diagramme = True   # Ob die Wechselwirkungsmatrix angezeigt werden soll
 laenge = 30         # Die länge des Proteins
 amino_auswahl = 20  # Wie viele Verschiedene Aminosorten es geben soll, 20 ist vorgegeben
 Faltungs_schritte = 1 * 10**5   # Wie oft sich das Protein faltet
 Start_Temperatur = 1    # Bei weclher Tempertaur das Programm ausgeführt wird, bzw. bei welcher Temperatur das Programm startet
-Temperatur_Schritte = 1 # in wie viele equi-distante Temperatur schritte alles untertielt wird. Bei 1 bleibt die Starttemperatur
+Temperatur_Schritte = 10 # in wie viele equi-distante Temperatur schritte alles untertielt wird. Bei 1 bleibt die Starttemperatur
 Wechselwirkungs_energie_fest = -3       # in Aufgabe 6 soll die Energie jeder Wechselwirkung auf -3 festgelegt werden
 Random_wechselwirkungsrichtung = False  # Ob das Vorzeichen bei der festen Energie random geswapt werden soll, auch aufgabe 6
 
@@ -180,15 +180,19 @@ def Wechselmatrix(laenge, fixed_energie, random_direction):
             matrix[y, x] = matrix[x, y]
 
     if Diagramme:
-        plt.imshow(matrix)
-        plt.show()
+        plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=1, rowspan=1)
+        plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
+        plot3 = plt.subplot2grid((2, 2), (0, 1), colspan=1, rowspan=1)
+        plot1.imshow(matrix)
 
     eigenwerte = np.linalg.eigvalsh(matrix)
     sort_eigen = np.abs(np.append(eigenwerte[eigenwerte > 0], eigenwerte[eigenwerte < 0]))
 
     if Diagramme:
-        plt.bar(list(range(laenge)), sort_eigen)
+        plot3.bar(list(range(laenge)), eigenwerte)
+        plot2.bar(list(range(laenge)), sort_eigen)
         plt.show()
+        plt.clf()
 
     return matrix
 
@@ -345,7 +349,7 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
     # Vorher Protein Graph
     plot2.plot([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions])
     plot2.scatter([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions], s=100)
-    plot2.set_xlabel(str("Abstand", Abstand_A_O(Protein_4)))
+    plot2.set_xlabel(Abstand_A_O(Protein_4))
     plot2.grid()
 
     # Der wichtige Teil
@@ -359,16 +363,17 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
     # Nachher Protein Graph
     plot3.plot([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions])
     plot3.scatter([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions], s=100)
-    plot3.set_xlabel("Abstand", str(Abstand_A_O(Protein_4)))
+    plot3.set_xlabel(Abstand_A_O(Protein_4))
     plot3.grid()
 
     # Energie Graph
     # plot1.plot(list(range(schritte)), Energie_array)
-    plot1.scatter(list(range(schritte)), Energie_array)
+    plot1.scatter(list(range(schritte)), Energie_array, s=10)
     plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
     plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
     plot1.grid()
     plt.show()
+    plt.clf()
 
 def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte):
     # Durch np.linspace immer gleich Temperatur schritte, immer gleich viele Faltungen pro Temperatur
@@ -399,7 +404,7 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
 
     # Energie Graph
     plot1.scatter(list(range(schritte)), Energie_array)
-    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", s=5)
     plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
     plot1.vlines(list(range(0,schritte, schritte//Temp_schritte)), np.min(Energie_array), np.max(Energie_array), colors="k", zorder=0)
     plot1.set_ylabel("Energie")
@@ -407,7 +412,7 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
 
     # Abstands Graph
     plot2.scatter(list(range(schritte)), Abstands_array)
-    plot2.scatter([0, schritte], [Abstands_array[0], Abstands_array[-1]], c="red")
+    plot2.scatter([0, schritte], [Abstands_array[0], Abstands_array[-1]], c="red", s=5)
     plot2.plot([0, schritte], [Abstands_array[0], Abstands_array[-1]], c="red")
     plot2.vlines(list(range(0, schritte, schritte // Temp_schritte)), np.min(Abstands_array), np.max(Abstands_array), colors="k", zorder=0)
     plot2.set_ylabel("Abstand")
@@ -421,6 +426,7 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
     plot4.grid()
 
     plt.show()
+    plt.clf()
 
 def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte):
     Protein_6 = Protein(laenge=laenge, amino_auswahl=amino_auswahl, fixed_energie=fixed_energie, random_direction=random_direction)
@@ -460,8 +466,8 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
     plot2.set_ylabel("Energie")
     plot2.grid()
 
-
     plt.show()
+    plt.clf()
 
 
 def main():
