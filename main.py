@@ -8,6 +8,7 @@ from astropy import modeling
 from numba import jit
 
 """
+Test test
 Es fehlen noch kleinigkeiten im Code: bei Aufagbe 5 mitteln. 
 Auswertung bis zur Vorstellung fehlt noch: Eigenwert Verteilung bei 2, Werte bei 3 und 4, was anschaulichen zu 5 und 6
 
