@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 from astropy import modeling
+from numba import jit
 
 """
 Es fehlen noch kleinigkeiten im Code: bei Aufagbe 5 mitteln. 
@@ -251,7 +252,6 @@ def spezifische_Waerme(fixed_energie, neighbour_array, temp):
     return Kapazitaet
 
 def Matrix_mitteln(anzahl):
-    #
     all_eigen = np.zeros((anzahl, 20))
     with alive_bar(anzahl) as bar:
         for i in range(anzahl):
@@ -264,9 +264,11 @@ def Matrix_mitteln(anzahl):
     sort_mittel_eigen = np.abs(np.append(mittel_eigen[eigenwerte > 0], mittel_eigen[eigenwerte < 0]))
 
     bins = 100
-    hist = np.histogram(all_eigen[:,2], bins=bins, density=False)
+    hist = np.histogram(all_eigen[:, 2], bins=bins, density=False)
     hist_teil = (hist[0][int(0.*bins):], hist[1][int(0.*bins):])
     plt.bar(hist_teil[1][0:-1], hist_teil[0])
+    plt.xlabel('Eigenwerte')
+    plt.ylabel('Häufigkeit Eigenwerte')
 
     # plt.bar(list(range(20)), sort_mittel_eigen)
 
@@ -294,6 +296,12 @@ def Matrix_mitteln(anzahl):
 
     plt.grid()
     plt.show()
+
+
+def Binner(array, binsize):
+    array = array.reshape(-1, binsize)
+    binned_array = np.mean(array, axis=1)
+    return binned_array
 
 
 def Aufgabe_3():
@@ -381,8 +389,8 @@ def Aufgabe_3():
                  label=f'Fit: a={popt[0]:.4f}, α={popt[1]:.4f}')
 
         plt.xlabel("Schritte")
-        plt.ylabel("Mittlere quadratische Entfernung (MSD)")
-        plt.title(f"MSD für {iterations} Iterationen und {steps} Schritte")
+        plt.ylabel("Mittlere quadratische Entfernung")
+        plt.title(f"Mittlere quadratische Entfernung für {iterations} Iterationen und {steps} Schritte")
         plt.legend()
         plt.grid()
         plt.show()
@@ -424,9 +432,12 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
     # Energie Graph
     # plot1.plot(list(range(schritte)), Energie_array)
     plot1.scatter(list(range(schritte)), Energie_array, s=10)
-    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
-    plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt', s=3)
+    # plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt')
+    plot1.set_xlabel('Zeit')
+    plot1.set_ylabel('Energie')
     plot1.grid()
+    plot1.legend()
     plt.show()
     plt.clf()
 
@@ -525,14 +536,12 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
     plt.clf()
 
 def main():
-    print("YI STILL THE MAIN")
     # Aufgabe_3()
-    # Aufgabe_4()
+    Aufgabe_4()
     # Aufgabe_5()
     # Aufgabe_6(fixed_energie=Wechselwirkungs_energie_fest, random_direction=Random_wechselwirkungsrichtung)
-    Matrix_mitteln(matrizen)
-    print(int(12.7)+1)
-
+    # Matrix_mitteln(matrizen)
+    # print(int(12.7)+1)
 
 
 main()
