@@ -267,8 +267,6 @@ def Matrix_mitteln(anzahl):
     hist = np.histogram(all_eigen[:, 2], bins=bins, density=False)
     hist_teil = (hist[0][int(0.*bins):], hist[1][int(0.*bins):])
     plt.bar(hist_teil[1][0:-1], hist_teil[0])
-    plt.xlabel('Eigenwerte')
-    plt.ylabel('Häufigkeit Eigenwerte')
 
     # plt.bar(list(range(20)), sort_mittel_eigen)
 
@@ -443,6 +441,8 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
 
 def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte):
     # Durch np.linspace immer gleich Temperatur schritte, immer gleich viele Faltungen pro Temperatur
+    mean_Energie = []
+    mean_Abstand = []
     temp_list = np.linspace(temp, Start_Temperatur/Temp_schritte, Temp_schritte)
 
     Protein_5 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
@@ -466,7 +466,10 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
                 Protein_5.Position_swap(temp)
                 Energie_array[i+index*Faltungs_schritte//Temp_schritte] = Protein_5.energie
                 Abstands_array[i+index*Faltungs_schritte//Temp_schritte] = Abstand_A_O(Protein_5)
+                mean_Energie = mean_Energie.append(np.mean(Energie_array))
+                mean_Abstand = mean_Abstand.append(np.mean(Abstands_array))
                 bar()
+
 
     # Energie Graph
     plot1.scatter(list(range(schritte)), Energie_array)
