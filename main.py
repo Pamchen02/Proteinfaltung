@@ -3,27 +3,43 @@ from alive_progress import alive_bar
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.stats import norm
+from astropy import modeling
+from numba import jit
 
 """
+Test test
 Es fehlen noch kleinigkeiten im Code: bei Aufagbe 5 mitteln. 
 Auswertung bis zur Vorstellung fehlt noch: Eigenwert Verteilung bei 2, Werte bei 3 und 4, was anschaulichen zu 5 und 6
 
 Da bei hohen Temperaturen mehr passiert, braucht er da länger
 Alles braucht bei Start_temp 10 und 10 schritten ca. 14 sec bei 10**5 Faltungsschritten
 Alles braucht bei Start_temp 1 und 10 schritten ca. 2 sec bei 10**5 Faltungsschritten
+~ 4000 Faltungen die Sekunde normalerweise
+10-1 Temp 1*10^6 Wiederholungen pro temp t~30min
+
+Für ein Start, mit allen möglichen Temps durch rechnen, mitteln, dann ganz viele mitteln 
+
 """
+
+
 
 boltzmann = 1 # 1.380 * 10 ** (-23)
 
-Diagramme = True   # Ob die Wechselwirkungsmatrix angezeigt werden soll
+Diagramme = True  # Ob die Wechselwirkungsmatrix angezeigt werden soll
 laenge = 30         # Die länge des Proteins
 amino_auswahl = 20  # Wie viele Verschiedene Aminosorten es geben soll, 20 ist vorgegeben
-Faltungs_schritte = 1 * 10**5   # Wie oft sich das Protein faltet
+Faltungs_schritte = 1 * 10**5  # Wie oft sich das Protein faltet
+Faltungs_bins = 1000  # Auf wie viele Bins das im Diagramm Gebinnt werden soll
 Start_Temperatur = 1    # Bei weclher Tempertaur das Programm ausgeführt wird, bzw. bei welcher Temperatur das Programm startet
 Temperatur_Schritte = 10 # in wie viele equi-distante Temperatur schritte alles untertielt wird. Bei 1 bleibt die Starttemperatur
 Wechselwirkungs_energie_fest = -3       # in Aufgabe 6 soll die Energie jeder Wechselwirkung auf -3 festgelegt werden
 Random_wechselwirkungsrichtung = False  # Ob das Vorzeichen bei der festen Energie random geswapt werden soll, auch aufgabe 6
+matrizen = 10000     # wie viele Matrizen für die Verteilung der eigenwertde erstellt werden soll
 
+
+
+Binsize = Faltungs_schritte//Faltungs_bins
 # Im besten Fall ist Faltungs_schritte durch Temperatur_Schritte teilbar, sonst doff
 
 
@@ -179,7 +195,7 @@ def Wechselmatrix(laenge, fixed_energie, random_direction):
 
             matrix[y, x] = matrix[x, y]
 
-    if Diagramme:
+    """if Diagramme:
         plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=1, rowspan=1)
         plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
         plot3 = plt.subplot2grid((2, 2), (0, 1), colspan=1, rowspan=1)
@@ -192,7 +208,7 @@ def Wechselmatrix(laenge, fixed_energie, random_direction):
         plot3.bar(list(range(laenge)), eigenwerte)
         plot2.bar(list(range(laenge)), sort_eigen)
         plt.show()
-        plt.clf()
+        plt.clf()"""
 
     return matrix
 
@@ -240,6 +256,56 @@ def spezifische_Waerme(fixed_energie, neighbour_array, temp):
     Kapazitaet = fixed_energie**2 * (np.mean(neighbour_array**2) - np.mean(neighbour_array)**2) / (laenge * temp**2)
     return Kapazitaet
 
+def Matrix_mitteln(anzahl):
+    all_eigen = np.zeros((anzahl, 20))
+    with alive_bar(anzahl) as bar:
+        for i in range(anzahl):
+            matrix = Wechselmatrix(amino_auswahl, False, False)
+            eigenwerte = np.asarray(np.linalg.eigvalsh(matrix))
+            all_eigen[i] = eigenwerte
+            bar()
+
+    mittel_eigen = np.mean(all_eigen, axis=0)
+    sort_mittel_eigen = np.abs(np.append(mittel_eigen[eigenwerte > 0], mittel_eigen[eigenwerte < 0]))
+
+    bins = 100
+    hist = np.histogram(all_eigen[:, 2], bins=bins, density=False)
+    hist_teil = (hist[0][int(0.*bins):], hist[1][int(0.*bins):])
+    plt.bar(hist_teil[1][0:-1], hist_teil[0])
+    plt.xlabel('Eigenwerte')
+    plt.ylabel('Häufigkeit Eigenwerte')
+
+    # plt.bar(list(range(20)), sort_mittel_eigen)
+
+    """mean = np.mean(hist_teil[1][0:-1] * hist_teil[0] / 1000)
+    std = np.sqrt(np.sum((hist_teil[1][0:-1] - mean) ** 2 * hist_teil[0]) / (len([x for x in hist_teil[1] if x != 0]) - 1))
+    print(mean, std)
+    xmin, xmax = plt.xlim()
+    x = np.linspace(xmin, xmax, 10000)
+    m = modeling.models.Gaussian1D(amplitude=0.1, mean=mean, stddev=std*5)
+    plt.plot(x, m(x), c="red")"""
+
+    """plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=1, rowspan=1)
+        plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
+        plot3 = plt.subplot2grid((2, 2), (0, 1), colspan=1, rowspan=1)
+        plot1.imshow(matrix)
+
+
+    eigenwerte = np.linalg.eigvalsh(matrix)
+    sort_eigen = np.abs(np.append(eigenwerte[eigenwerte > 0], eigenwerte[eigenwerte < 0]))
+
+    if Diagramme:
+        plot3.bar(list(range(laenge)), eigenwerte)
+        plot2.bar(list(range(laenge)), sort_eigen)
+        plt.show()"""
+
+    plt.grid()
+    plt.show()
+
+def Binner(array, binsize):
+    array = array.reshape(-1, binsize)
+    binned_array = np.mean(array, axis=1)
+    return binned_array
 
 def Aufgabe_3():
     # Das hat Jonathan gemacht, fragt den
@@ -326,8 +392,8 @@ def Aufgabe_3():
                  label=f'Fit: a={popt[0]:.4f}, α={popt[1]:.4f}')
 
         plt.xlabel("Schritte")
-        plt.ylabel("Mittlere quadratische Entfernung (MSD)")
-        plt.title(f"MSD für {iterations} Iterationen und {steps} Schritte")
+        plt.ylabel("Mittlere quadratische Entfernung")
+        plt.title(f"Mittlere quadratische Entfernung für {iterations} Iterationen und {steps} Schritte")
         plt.legend()
         plt.grid()
         plt.show()
@@ -369,9 +435,12 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
     # Energie Graph
     # plot1.plot(list(range(schritte)), Energie_array)
     plot1.scatter(list(range(schritte)), Energie_array, s=10)
-    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
-    plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt', s=3)
+    # plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt')
+    plot1.set_xlabel('Zeit')
+    plot1.set_ylabel('Energie')
     plot1.grid()
+    plot1.legend()
     plt.show()
     plt.clf()
 
@@ -402,19 +471,26 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
                 Abstands_array[i+index*Faltungs_schritte//Temp_schritte] = Abstand_A_O(Protein_5)
                 bar()
 
+    Energie_array = Binner(Energie_array, binsize=Binsize)
+    Abstands_array = Binner(Abstands_array, Binsize)
+
+    mean_Last_energie_temp = np.mean(Energie_array.reshape(Temp_schritte, -1)[:, -1000:], axis=1)
+    mean_Last_Abstand_temp = np.mean(Abstands_array.reshape(Temp_schritte, -1)[:, -1000:], axis=1)
+
+
     # Energie Graph
-    plot1.scatter(list(range(schritte)), Energie_array)
-    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", s=5)
-    plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red")
-    plot1.vlines(list(range(0,schritte, schritte//Temp_schritte)), np.min(Energie_array), np.max(Energie_array), colors="k", zorder=0)
+    plot1.scatter(list(range(Faltungs_bins)), Energie_array, s=10)
+    plot1.scatter([0, Faltungs_bins], [Energie_array[0], Energie_array[-1]], c="red", s=5)
+    plot1.plot([0, Faltungs_bins], [Energie_array[0], Energie_array[-1]], c="red")
+    plot1.vlines(list(range(0,Faltungs_bins, Faltungs_bins//Temp_schritte)), np.min(Energie_array), np.max(Energie_array), colors="k", zorder=0)
     plot1.set_ylabel("Energie")
     plot1.grid()
 
     # Abstands Graph
-    plot2.scatter(list(range(schritte)), Abstands_array)
-    plot2.scatter([0, schritte], [Abstands_array[0], Abstands_array[-1]], c="red", s=5)
-    plot2.plot([0, schritte], [Abstands_array[0], Abstands_array[-1]], c="red")
-    plot2.vlines(list(range(0, schritte, schritte // Temp_schritte)), np.min(Abstands_array), np.max(Abstands_array), colors="k", zorder=0)
+    plot2.scatter(list(range(Faltungs_bins)), Abstands_array, s=10)
+    plot2.scatter([0, Faltungs_bins], [Abstands_array[0], Abstands_array[-1]], c="red", s=5)
+    plot2.plot([0, Faltungs_bins], [Abstands_array[0], Abstands_array[-1]], c="red")
+    plot2.vlines(list(range(0, Faltungs_bins, Faltungs_bins // Temp_schritte)), np.min(Abstands_array), np.max(Abstands_array), colors="k", zorder=0)
     plot2.set_ylabel("Abstand")
     plot2.grid()
 
@@ -443,7 +519,7 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
                 Protein_6.Position_swap(temp)
                 Energie_array[i+index*schritte//Temp_schritte] = Protein_6.energie
                 Abstands_array[i+index*schritte//Temp_schritte] = Abstand_A_O(Protein_6)
-                neighbour_array[i] = Number_Neighbours(Protein_6)
+                neighbour_array[i] = Number_Neighbours(Protein_6)/2
                 bar()
             # Neighbour_mega_array[index] = neighbour_array
             Waerme_array[index] = spezifische_Waerme(fixed_energie, neighbour_array, temp)
@@ -469,12 +545,14 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
     plt.show()
     plt.clf()
 
-
 def main():
     print("YI STILL THE MAIN")
     # Aufgabe_3()
     # Aufgabe_4()
-    # Aufgabe_5()
+    Aufgabe_5()
     # Aufgabe_6(fixed_energie=Wechselwirkungs_energie_fest, random_direction=Random_wechselwirkungsrichtung)
+    # Matrix_mitteln(matrizen)
+
+
 
 main()
