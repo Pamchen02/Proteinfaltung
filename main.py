@@ -432,6 +432,8 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
 
 def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte):
     # Durch np.linspace immer gleich Temperatur schritte, immer gleich viele Faltungen pro Temperatur
+    mean_Energie = []
+    mean_Abstand = []
     temp_list = np.linspace(temp, Start_Temperatur/Temp_schritte, Temp_schritte)
 
     Protein_5 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
@@ -455,7 +457,10 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
                 Protein_5.Position_swap(temp)
                 Energie_array[i+index*Faltungs_schritte//Temp_schritte] = Protein_5.energie
                 Abstands_array[i+index*Faltungs_schritte//Temp_schritte] = Abstand_A_O(Protein_5)
+                mean_Energie = mean_Energie.append(np.mean(Energie_array))
+                mean_Abstand = mean_Abstand.append(np.mean(Abstands_array))
                 bar()
+
 
     # Energie Graph
     plot1.scatter(list(range(schritte)), Energie_array)
@@ -527,8 +532,8 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
 def main():
     print("YI STILL THE MAIN")
     # Aufgabe_3()
-    # Aufgabe_4()
-    # Aufgabe_5()
+    Aufgabe_4()
+    Aufgabe_5()
     # Aufgabe_6(fixed_energie=Wechselwirkungs_energie_fest, random_direction=Random_wechselwirkungsrichtung)
     Matrix_mitteln(matrizen)
     print(int(12.7)+1)
