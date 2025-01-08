@@ -29,7 +29,7 @@ boltzmann = 1 # 1.380 * 10 ** (-23)
 Diagramme = True  # Ob die Wechselwirkungsmatrix angezeigt werden soll
 laenge = 30         # Die länge des Proteins
 amino_auswahl = 20  # Wie viele Verschiedene Aminosorten es geben soll, 20 ist vorgegeben
-Faltungs_schritte = 1 * 10**5  # Wie oft sich das Protein faltet
+Faltungs_schritte = 1 * 10**7  # Wie oft sich das Protein faltet
 Faltungs_bins = 1000  # Auf wie viele Bins das im Diagramm Gebinnt werden soll
 Start_Temperatur = 1    # Bei weclher Tempertaur das Programm ausgeführt wird, bzw. bei welcher Temperatur das Programm startet
 Temperatur_Schritte = 10 # in wie viele equi-distante Temperatur schritte alles untertielt wird. Bei 1 bleibt die Starttemperatur
@@ -309,8 +309,8 @@ def Binner(array, binsize):
 
 def Aufgabe_3():
     # Das hat Jonathan gemacht, fragt den
-    def RandoMandoDangoLaengo(steps):
-        def RandoMando(steps, start=(0, 0)):
+    def bewegung_molekül(steps):
+        def random(steps, start=(0, 0)):
             position = start
             position_set = {position}
             position_list = [position]
@@ -356,7 +356,7 @@ def Aufgabe_3():
             return position_list, msd_cumulative_list
 
         while True:
-            positions, msd_cumulative_values = RandoMando(steps)
+            positions, msd_cumulative_values = random(steps)
             if positions and msd_cumulative_values:
                 return msd_cumulative_values
 
@@ -368,7 +368,7 @@ def Aufgabe_3():
 
         with alive_bar(iterations, force_tty=True) as bar:
             for i in range(iterations):
-                msd_values = RandoMandoDangoLaengo(steps)
+                msd_values = bewegung_molekül(steps)
                 all_msd_values.append(msd_values)
                 bar()
 
@@ -415,7 +415,7 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
     # Vorher Protein Graph
     plot2.plot([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions])
     plot2.scatter([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions], s=100)
-    plot2.set_xlabel(Abstand_A_O(Protein_4))
+    plot2.legend(title=f"mittlerer Abstand: {Abstand_A_O(Protein_4):.2f}")
     plot2.grid()
 
     # Der wichtige Teil
@@ -426,16 +426,18 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
             Energie_array[i] = Protein_4.energie
             bar()
 
+    Energie_array = Binner(Energie_array, binsize=Binsize)
+
     # Nachher Protein Graph
     plot3.plot([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions])
     plot3.scatter([point[0] for point in Protein_4.amino_positions], [point[1] for point in Protein_4.amino_positions], s=100)
-    plot3.set_xlabel(Abstand_A_O(Protein_4))
+    plot3.legend(title=f"mittlerer Abstand: {Abstand_A_O(Protein_4):.2f}")
     plot3.grid()
 
     # Energie Graph
     # plot1.plot(list(range(schritte)), Energie_array)
-    plot1.scatter(list(range(schritte)), Energie_array, s=10)
-    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt', s=3)
+    plot1.scatter(list(range(Faltungs_bins)), Energie_array, s=10)
+    plot1.scatter([0, Faltungs_bins], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt', s=300)
     # plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt')
     plot1.set_xlabel('Zeit')
     plot1.set_ylabel('Energie')
@@ -548,8 +550,8 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
 def main():
     print("YI STILL THE MAIN")
     # Aufgabe_3()
-    # Aufgabe_4()
-    Aufgabe_5()
+    Aufgabe_4()
+    # Aufgabe_5()
     # Aufgabe_6(fixed_energie=Wechselwirkungs_energie_fest, random_direction=Random_wechselwirkungsrichtung)
     # Matrix_mitteln(matrizen)
 
