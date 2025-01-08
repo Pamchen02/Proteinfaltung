@@ -430,7 +430,7 @@ def Aufgabe_4(temp=Start_Temperatur, schritte=Faltungs_schritte):
     # Energie Graph
     # plot1.plot(list(range(schritte)), Energie_array)
     plot1.scatter(list(range(schritte)), Energie_array, s=10)
-    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt', s=3)
+    plot1.scatter([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt', s=200)
     # plot1.plot([0, schritte], [Energie_array[0], Energie_array[-1]], c="red", label='Anfangs- und Endpunkt')
     plot1.set_xlabel('Zeit')
     plot1.set_ylabel('Energie')
