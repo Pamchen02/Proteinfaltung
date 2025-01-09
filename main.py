@@ -36,6 +36,7 @@ Temperatur_Schritte = 10 # in wie viele equi-distante Temperatur schritte alles 
 Wechselwirkungs_energie_fest = -3       # in Aufgabe 6 soll die Energie jeder Wechselwirkung auf -3 festgelegt werden
 Random_wechselwirkungsrichtung = False  # Ob das Vorzeichen bei der festen Energie random geswapt werden soll, auch aufgabe 6
 matrizen = 10000     # wie viele Matrizen für die Verteilung der eigenwertde erstellt werden soll
+Auf_5_diagramme = False
 
 
 
@@ -453,17 +454,18 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
     Protein_5 = Protein(laenge=laenge, amino_auswahl=amino_auswahl)
     Energie_array, Abstands_array = np.zeros(schritte), np.zeros(schritte)
 
-    plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=1, rowspan=1)
-    plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
-    plot3 = plt.subplot2grid((2, 2), (0, 1), colspan=1, rowspan=1)
-    plot4 = plt.subplot2grid((2, 2), (1, 1), colspan=1, rowspan=1)
+    if Auf_5_diagramme:
+        plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=1, rowspan=1)
+        plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=1, rowspan=1)
+        plot3 = plt.subplot2grid((2, 2), (0, 1), colspan=1, rowspan=1)
+        plot4 = plt.subplot2grid((2, 2), (1, 1), colspan=1, rowspan=1)
 
-    # Vorher Protein Graph
-    plot3.plot([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions])
-    plot3.scatter([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions],
-                  s=100)
-    plot3.set_xlabel("Start")
-    plot3.grid()
+        # Vorher Protein Graph
+        plot3.plot([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions])
+        plot3.scatter([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions],
+                      s=100)
+        plot3.set_xlabel("Start")
+        plot3.grid()
 
     with alive_bar(schritte) as bar:
         for index, temp in enumerate(temp_list):
@@ -480,31 +482,35 @@ def Aufgabe_5(temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=T
     mean_Last_Abstand_temp = np.mean(Abstands_array.reshape(Temp_schritte, -1)[:, -1000:], axis=1)
 
 
-    # Energie Graph
-    plot1.scatter(list(range(Faltungs_bins)), Energie_array, s=10)
-    plot1.scatter([0, Faltungs_bins], [Energie_array[0], Energie_array[-1]], c="red", s=5)
-    plot1.plot([0, Faltungs_bins], [Energie_array[0], Energie_array[-1]], c="red")
-    plot1.vlines(list(range(0,Faltungs_bins, Faltungs_bins//Temp_schritte)), np.min(Energie_array), np.max(Energie_array), colors="k", zorder=0)
-    plot1.set_ylabel("Energie")
-    plot1.grid()
+    if Auf_5_diagramme:
+        # Energie Graph
+        plot1.scatter(list(range(Faltungs_bins)), Energie_array, s=10)
+        plot1.scatter([0, Faltungs_bins], [Energie_array[0], Energie_array[-1]], c="red", s=5)
+        plot1.plot([0, Faltungs_bins], [Energie_array[0], Energie_array[-1]], c="red")
+        plot1.vlines(list(range(0,Faltungs_bins, Faltungs_bins//Temp_schritte)), np.min(Energie_array), np.max(Energie_array), colors="k", zorder=0)
+        plot1.set_ylabel("Energie")
+        plot1.grid()
 
-    # Abstands Graph
-    plot2.scatter(list(range(Faltungs_bins)), Abstands_array, s=10)
-    plot2.scatter([0, Faltungs_bins], [Abstands_array[0], Abstands_array[-1]], c="red", s=5)
-    plot2.plot([0, Faltungs_bins], [Abstands_array[0], Abstands_array[-1]], c="red")
-    plot2.vlines(list(range(0, Faltungs_bins, Faltungs_bins // Temp_schritte)), np.min(Abstands_array), np.max(Abstands_array), colors="k", zorder=0)
-    plot2.set_ylabel("Abstand")
-    plot2.grid()
+    if Auf_5_diagramme:
+        # Abstands Graph
+        plot2.scatter(list(range(Faltungs_bins)), Abstands_array, s=10)
+        plot2.scatter([0, Faltungs_bins], [Abstands_array[0], Abstands_array[-1]], c="red", s=5)
+        plot2.plot([0, Faltungs_bins], [Abstands_array[0], Abstands_array[-1]], c="red")
+        plot2.vlines(list(range(0, Faltungs_bins, Faltungs_bins // Temp_schritte)), np.min(Abstands_array), np.max(Abstands_array), colors="k", zorder=0)
+        plot2.set_ylabel("Abstand")
+        plot2.grid()
 
-    # Nachher Protein Graph
-    plot4.plot([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions])
-    plot4.scatter([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions],
-                  s=100)
-    plot4.set_xlabel("Ende")
-    plot4.grid()
+        # Nachher Protein Graph
+        plot4.plot([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions])
+        plot4.scatter([point[0] for point in Protein_5.amino_positions], [point[1] for point in Protein_5.amino_positions],
+                      s=100)
+        plot4.set_xlabel("Ende")
+        plot4.grid()
 
-    plt.show()
-    plt.clf()
+        plt.show()
+        plt.clf()
+
+    return mean_Last_energie_temp, mean_Last_Abstand_temp
 
 def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=Faltungs_schritte, Temp_schritte=Temperatur_Schritte):
     Protein_6 = Protein(laenge=laenge, amino_auswahl=amino_auswahl, fixed_energie=fixed_energie, random_direction=random_direction)
@@ -547,11 +553,42 @@ def Aufgabe_6(fixed_energie, random_direction, temp=Start_Temperatur, schritte=F
     plt.show()
     plt.clf()
 
+def Auf_5_nur_oft(oft):
+    temp_liste = np.linspace(Start_Temperatur, Start_Temperatur / Temperatur_Schritte, Temperatur_Schritte)
+    energie_array, abstands_array = np.zeros((oft, 10)), np.zeros((oft, 10))
+
+    for i in range(oft):
+        energie_array[i], abstands_array[i] = Aufgabe_5()
+
+
+    mean_energie = np.mean(energie_array, axis=0)
+    mean_abstand = np.mean(abstands_array, axis=0)
+
+    plot1 = plt.subplot2grid((2, 2), (0, 0), colspan=2, rowspan=1)
+    plot2 = plt.subplot2grid((2, 2), (1, 0), colspan=2, rowspan=1)
+
+    plot1.scatter(temp_liste, mean_energie, s=100)
+    plot1.set_xlabel('Temperatur')
+    plot1.set_ylabel('Energie')
+    plot1.grid()
+
+
+    plot2.scatter(temp_liste, mean_abstand, s=100)
+    plot2.set_xlabel('Temperatur')
+    plot2.set_ylabel('Abstand')
+    plot2.grid()
+
+    plt.show()
+    plt.clf()
+
+
+
 def main():
     print("YI STILL THE MAIN")
     # Aufgabe_3()
-    Aufgabe_4()
+    # Aufgabe_4()
     # Aufgabe_5()
+    Auf_5_nur_oft(10)
     # Aufgabe_6(fixed_energie=Wechselwirkungs_energie_fest, random_direction=Random_wechselwirkungsrichtung)
     # Matrix_mitteln(matrizen)
 
