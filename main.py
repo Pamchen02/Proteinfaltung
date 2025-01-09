@@ -29,14 +29,14 @@ boltzmann = 1 # 1.380 * 10 ** (-23)
 Diagramme = True  # Ob die Wechselwirkungsmatrix angezeigt werden soll
 laenge = 30         # Die länge des Proteins
 amino_auswahl = 20  # Wie viele Verschiedene Aminosorten es geben soll, 20 ist vorgegeben
-Faltungs_schritte = 1 * 10**7  # Wie oft sich das Protein faltet
+Faltungs_schritte = 1 * 10**6  # Wie oft sich das Protein faltet
 Faltungs_bins = 1000  # Auf wie viele Bins das im Diagramm Gebinnt werden soll
 Start_Temperatur = 1    # Bei weclher Tempertaur das Programm ausgeführt wird, bzw. bei welcher Temperatur das Programm startet
 Temperatur_Schritte = 10 # in wie viele equi-distante Temperatur schritte alles untertielt wird. Bei 1 bleibt die Starttemperatur
 Wechselwirkungs_energie_fest = -3       # in Aufgabe 6 soll die Energie jeder Wechselwirkung auf -3 festgelegt werden
 Random_wechselwirkungsrichtung = False  # Ob das Vorzeichen bei der festen Energie random geswapt werden soll, auch aufgabe 6
 matrizen = 10000     # wie viele Matrizen für die Verteilung der eigenwertde erstellt werden soll
-Auf_5_diagramme = False
+Auf_5_diagramme = True
 
 
 
@@ -587,8 +587,8 @@ def main():
     print("YI STILL THE MAIN")
     # Aufgabe_3()
     # Aufgabe_4()
-    # Aufgabe_5()
-    Auf_5_nur_oft(10)
+    Aufgabe_5()
+    # Auf_5_nur_oft(10)
     # Aufgabe_6(fixed_energie=Wechselwirkungs_energie_fest, random_direction=Random_wechselwirkungsrichtung)
     # Matrix_mitteln(matrizen)
 
